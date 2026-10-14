@@ -129,6 +129,7 @@
     return (
       typeof value.referenceDate === 'string' &&
       /^\d{4}-\d{2}-\d{2}$/.test(value.referenceDate) &&
+      ordinalToISO(dateToOrdinal(value.referenceDate)) === value.referenceDate &&
       Number.isInteger(value.serviceDays) &&
       value.serviceDays >= 1 &&
       value.serviceDays <= 365 &&
@@ -454,26 +455,45 @@
     elements.restDays.value = String(settings.restDays);
   }
 
-  document.querySelector('#previous-month').addEventListener('click', () => {
-    if (displayedMonth === 0) {
-      displayedMonth = 11;
-      displayedYear -= 1;
-    } else displayedMonth -= 1;
+  function updateSearchResult() {
+    if (searchOrdinal === null) {
+      elements.searchResult.textContent =
+        'Choisissez une date pour savoir si elle sera en service ou à la maison.';
+      elements.searchResult.classList.remove('has-result');
+      return;
+    }
+
+    const duty = isDutyDay(searchOrdinal);
+    const daysUntilChange = duty
+      ? settings.serviceDays - phaseOn(searchOrdinal)
+      : cycleLength() - phaseOn(searchOrdinal);
+    const changeDate = formatDate(searchOrdinal + daysUntilChange);
+    elements.searchDate.value = ordinalToISO(searchOrdinal);
+    elements.searchResult.textContent = `Le ${formatDate(searchOrdinal, longDate)} : ${duty ? 'en service' : 'à la maison'} (changement le ${changeDate}).`;
+    elements.searchResult.classList.add('has-result');
+  }
+
+  function changeDisplayedMonth(offset) {
+    const nextMonth = displayedMonth + offset;
+    displayedYear += Math.floor(nextMonth / 12);
+    displayedMonth = positiveModulo(nextMonth, 12);
     renderCalendar();
+  }
+
+  document.querySelector('#previous-month').addEventListener('click', () => {
+    changeDisplayedMonth(-1);
   });
 
   document.querySelector('#next-month').addEventListener('click', () => {
-    if (displayedMonth === 11) {
-      displayedMonth = 0;
-      displayedYear += 1;
-    } else displayedMonth += 1;
-    renderCalendar();
+    changeDisplayedMonth(1);
   });
 
   document.querySelector('#today-button').addEventListener('click', () => {
     displayedYear = todayParts.year;
     displayedMonth = todayParts.month;
     searchOrdinal = null;
+    elements.searchDate.value = '';
+    updateSearchResult();
     renderCalendar();
   });
 
@@ -484,13 +504,7 @@
     const parts = ordinalToParts(searchOrdinal);
     displayedYear = parts.year;
     displayedMonth = parts.month;
-    const duty = isDutyDay(searchOrdinal);
-    const daysUntilChange = duty
-      ? settings.serviceDays - phaseOn(searchOrdinal)
-      : cycleLength() - phaseOn(searchOrdinal);
-    const changeDate = formatDate(searchOrdinal + daysUntilChange);
-    elements.searchResult.textContent = `Le ${formatDate(searchOrdinal, longDate)} : ${duty ? 'en service' : 'à la maison'} (changement le ${changeDate}).`;
-    elements.searchResult.classList.add('has-result');
+    updateSearchResult();
     renderCalendar();
   });
 
@@ -509,7 +523,14 @@
     }
     const destination = digits ? `https://wa.me/${digits}` : 'https://wa.me/';
     const url = `${destination}?text=${encodeURIComponent(whatsappMessage())}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const whatsappWindow = window.open(url, '_blank');
+    if (!whatsappWindow) {
+      elements.notificationFeedback.textContent =
+        'Le navigateur a bloqué la fenêtre WhatsApp. Autorisez les fenêtres contextuelles puis réessayez.';
+      elements.notificationFeedback.classList.add('is-error');
+      return;
+    }
+    whatsappWindow.opener = null;
     elements.notificationFeedback.classList.remove('is-error');
     elements.notificationFeedback.textContent =
       'WhatsApp est ouvert avec un message à vérifier et à envoyer manuellement.';
@@ -522,7 +543,15 @@
       elements.notificationFeedback.classList.add('is-error');
       return;
     }
-    const permission = await Notification.requestPermission();
+    let permission;
+    try {
+      permission = await Notification.requestPermission();
+    } catch (error) {
+      elements.notificationFeedback.textContent =
+        'Impossible de demander l’autorisation des notifications dans ce navigateur.';
+      elements.notificationFeedback.classList.add('is-error');
+      return;
+    }
     if (permission !== 'granted') {
       elements.notificationFeedback.textContent =
         'Autorisation refusée. Les notifications nécessitent votre accord dans le navigateur.';
@@ -558,6 +587,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(proposed));
       settings = proposed;
+      updateSearchResult();
       render();
       elements.settingsFeedback.textContent = 'Paramètres enregistrés sur cet appareil.';
     } catch (error) {
@@ -633,7 +663,7 @@
     document.body.append(link);
     link.click();
     link.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   document.querySelector('#export-ics').addEventListener('click', exportIcs);

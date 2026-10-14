@@ -1,5 +1,5 @@
 /* Cache hors ligne du calendrier — nouvelle version pour remplacer proprement l'ancienne. */
-const CACHE_NAME = 'mon-rythme-v3';
+const CACHE_NAME = 'mon-rythme-v5';
 const APP_SHELL = [
   './',
   './index.html',
