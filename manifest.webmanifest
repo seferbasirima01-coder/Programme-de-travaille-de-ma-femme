@@ -1,0 +1,22 @@
+{
+  "id": "./",
+  "name": "Mon rythme — calendrier de service",
+  "short_name": "Mon rythme",
+  "description": "Calendrier personnel de service et de repos, avec rappels et repères bien-être.",
+  "lang": "fr-FR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#f6f7f4",
+  "theme_color": "#f6f7f4",
+  "icons": [
+    {
+      "src": "./icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f6f7f4" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Mon rythme" />
+    <title>Calendrier de service</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/app-icon.svg" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Calendrier de service, accueil">
+          <span class="brand-mark" aria-hidden="true">✳</span>
+          <span>Mon rythme</span>
+        </a>
+        <div class="top-actions">
+          <button class="button button-light install-button" id="install-app" type="button" hidden>
+            Installer l’application
+          </button>
+          <button
+            class="button button-light"
+            id="export-ics"
+            type="button"
+            title="Télécharger les 12 prochains mois au format iCalendar"
+          >
+            <span aria-hidden="true">↓</span> Exporter en .ics
+          </button>
+          <button class="button button-dark" id="print-calendar" type="button">
+            <span aria-hidden="true">▤</span> Imprimer / PDF
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="intro" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow">VOTRE ORGANISATION, EN UN COUP D’ŒIL</p>
+            <h1 id="page-title">Calendrier de service</h1>
+            <p class="subtitle">
+              Un repère simple pour savoir où vous en êtes, aujourd’hui et pour les semaines à
+              venir.
+            </p>
+          </div>
+        </section>
+
+        <form class="date-search" id="date-search-form" role="search">
+          <label class="search-label" for="search-date">Rechercher une journée</label>
+          <div class="search-controls">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input
+              id="search-date"
+              type="date"
+              aria-label="Choisir une date pour connaître le statut"
+              required
+            />
+            <button class="button button-dark" type="submit">Voir le statut</button>
+          </div>
+          <p class="search-result" id="search-result" aria-live="polite">
+            Choisissez une date pour savoir si elle sera en service ou à la maison.
+          </p>
+        </form>
+
+        <section class="status-card" aria-live="polite" aria-labelledby="status-heading">
+          <div class="status-icon" id="status-icon" aria-hidden="true">☀</div>
+          <div class="status-copy">
+            <p class="status-kicker" id="status-kicker">STATUT DU JOUR</p>
+            <h2 id="status-heading">Chargement…</h2>
+            <p id="status-detail" class="status-detail"></p>
+          </div>
+          <div class="status-count" aria-label="Temps avant la prochaine relève">
+            <strong id="days-remaining">—</strong>
+            <span id="days-label">jours avant le changement</span>
+          </div>
+        </section>
+
+        <div class="content-grid">
+          <section class="panel calendar-panel" aria-labelledby="calendar-title">
+            <div class="panel-heading calendar-heading">
+              <div>
+                <p class="eyebrow">VUE MENSUELLE</p>
+                <h2 id="calendar-title">Calendrier</h2>
+              </div>
+              <div class="month-controls" aria-label="Navigation du calendrier">
+                <button
+                  class="icon-button"
+                  id="previous-month"
+                  type="button"
+                  aria-label="Mois précédent"
+                >
+                  ‹
+                </button>
+                <button class="button button-today" id="today-button" type="button">
+                  Aujourd’hui
+                </button>
+                <button class="icon-button" id="next-month" type="button" aria-label="Mois suivant">
+                  ›
+                </button>
+              </div>
+            </div>
+            <div class="month-label" id="month-label" aria-live="polite"></div>
+            <div
+              class="calendar-grid"
+              id="calendar-grid"
+              role="grid"
+              aria-labelledby="month-label"
+            ></div>
+            <div class="legend" aria-label="Légende du calendrier">
+              <span><i class="legend-dot duty-dot"></i> En service</span>
+              <span><i class="legend-dot home-dot"></i> À la maison</span>
+              <span><i class="legend-today"></i> Aujourd’hui</span>
+            </div>
+          </section>
+
+          <aside class="side-column">
+            <section class="panel upcoming-panel" aria-labelledby="upcoming-title">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">À NOTER</p>
+                  <h2 id="upcoming-title">Prochaines relèves</h2>
+                </div>
+                <span class="count-badge">12</span>
+              </div>
+              <p class="panel-description">Les prochains changements de rythme.</p>
+              <ol class="upcoming-list" id="upcoming-list"></ol>
+            </section>
+
+            <section class="panel pregnancy-panel" aria-labelledby="pregnancy-title">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">DOUCE ATTENTION</p>
+                  <h2 id="pregnancy-title">Grossesse & bien-être</h2>
+                </div>
+                <span class="pregnancy-sticker" aria-hidden="true">🤰🏽</span>
+              </div>
+              <p class="pregnancy-stage" id="pregnancy-stage" aria-live="polite"></p>
+              <div class="wellbeing-note" id="wellbeing-note"></div>
+              <form id="pregnancy-form" class="pregnancy-form">
+                <label for="pregnancy-start">Début estimé de grossesse</label>
+                <input id="pregnancy-start" type="date" required />
+                <p class="field-help">
+                  Si vous la connaissez, indiquez la date des dernières règles pour estimer
+                  l’avancement.
+                </p>
+                <label for="whatsapp-number">WhatsApp (facultatif, indicatif international)</label>
+                <input
+                  id="whatsapp-number"
+                  type="tel"
+                  inputmode="tel"
+                  placeholder="Ex. +33 6 12 34 56 78"
+                />
+                <button class="button button-whatsapp" id="whatsapp-share" type="button">
+                  💬 Préparer le message WhatsApp
+                </button>
+                <p class="field-help">
+                  Le message s’ouvre dans WhatsApp et doit être envoyé manuellement. Aucun message
+                  n’est envoyé automatiquement.
+                </p>
+              </form>
+              <button class="button button-reminder" id="enable-notifications" type="button">
+                Activer les rappels sur cet appareil
+              </button>
+              <p class="field-help notification-note">
+                Les rappels du lendemain et des changements de mois s’affichent si la page est
+                ouverte ce jour-là. WhatsApp ne permet pas l’envoi automatique depuis un simple
+                fichier HTML.
+              </p>
+              <p class="settings-feedback" id="notification-feedback" aria-live="polite"></p>
+              <p class="medical-note">
+                Repères généraux uniquement : le suivi et les conseils de la sage-femme ou du
+                médecin priment.
+              </p>
+            </section>
+
+            <details class="panel settings-panel" id="settings-panel">
+              <summary>
+                <span class="settings-summary-copy">
+                  <span class="eyebrow">PERSONNALISER</span>
+                  <strong>Paramètres du cycle</strong>
+                </span>
+                <span class="settings-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <form id="settings-form" class="settings-form">
+                <label for="reference-date">Date de départ de référence</label>
+                <input id="reference-date" name="referenceDate" type="date" required />
+                <p class="field-help">Cette date correspond au premier jour de service.</p>
+
+                <div class="duration-fields">
+                  <div>
+                    <label for="service-days">Durée du service</label>
+                    <div class="input-with-unit">
+                      <input
+                        id="service-days"
+                        name="serviceDays"
+                        type="number"
+                        min="1"
+                        max="365"
+                        step="1"
+                        required
+                      />
+                      <span>jours</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label for="rest-days">Durée du repos</label>
+                    <div class="input-with-unit">
+                      <input
+                        id="rest-days"
+                        name="restDays"
+                        type="number"
+                        min="1"
+                        max="365"
+                        step="1"
+                        required
+                      />
+                      <span>jours</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="settings-feedback" id="settings-feedback" aria-live="polite"></p>
+                <button class="button button-dark save-button" type="submit">
+                  Enregistrer les paramètres
+                </button>
+                <p class="field-help">Vos réglages sont conservés sur cet appareil.</p>
+              </form>
+            </details>
+            <p class="privacy-note">
+              <span aria-hidden="true">◉</span> Vos données restent dans ce navigateur.
+            </p>
+          </aside>
+        </div>
+      </main>
+      <footer class="footer">
+        <span>Fait pour vous aider à garder le bon rythme.</span><span id="footer-year"></span>
+      </footer>
+    </div>
+  </body>
+</html>
